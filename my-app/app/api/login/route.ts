@@ -1,4 +1,5 @@
 import { query } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { cookies } from 'next/headers'
 
@@ -9,15 +10,16 @@ export async function POST(req: Request) {
   const email = String(body.email ?? '').trim()
   const password = String(body.password ?? '')
   // 2. SELECT the row where email = ?
-  const [row] = await query('SELECT id, email, password FROM users WHERE email = ?', [email])
+  const [row] = await query<{ id: number; email: string; password: string }>('SELECT id, email, password FROM users WHERE email = ?', [email])
   // 3. If no row -> 401 "invalid credentials"
   if (!row) {
     return Response.json({ error: 'invalid credentials' }, { status: 401 })
   }
-  // 4. If row exists, compare body.password to row.password (plain === comparison)
-  if (row.password !== password) {
-    return Response.json({ error: 'invalid credentials' }, { status: 401 })
-  }
+    const ok = await bcrypt.compare(password, row.password)
+    if (!ok) {
+        return Response.json({ error: 'invalid credentials' }, { status: 401 })
+    }
+  
   // Password passed
   const token = randomUUID()
   await query("INSERT INTO sessions (token, user_id) VALUES (?, ?)", [token, row.id])

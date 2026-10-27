@@ -1,4 +1,4 @@
-import mysql from 'mysql2/promise'
+import mysql, { type ExecuteValues } from 'mysql2/promise'
 
 // A "pool" is a set of reusable MySQL connections. Next.js handles many requests at
 // once, and opening a brand new TCP connection to MySQL for every request is slow,
@@ -19,7 +19,7 @@ export const pool = mysql.createPool({
 // you from SQL injection. NEVER build SQL by string-concatenating user input.
 export async function query<T = Record<string, unknown>>(
   sql: string,
-  params: unknown[] = [],
+  params: ExecuteValues[] = [],
 ): Promise<T[]> {
   const [rows] = await pool.execute(sql, params)
   return rows as T[]
