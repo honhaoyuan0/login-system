@@ -1,6 +1,6 @@
 import { query } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { randomUUID } from 'crypto'
+import { signSession } from '@/lib/jwt'
 import { cookies } from 'next/headers'
 
 export async function POST(req: Request) {
@@ -21,8 +21,7 @@ export async function POST(req: Request) {
     }
   
   // Password passed
-  const token = randomUUID()
-  await query("INSERT INTO sessions (token, user_id) VALUES (?, ?)", [token, row.id])
+  const token = await signSession({ userId: row.id, email: row.email })
   const cookieStore = await cookies()
   cookieStore.set('session', token, {
     httpOnly: true,
